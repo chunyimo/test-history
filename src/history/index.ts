@@ -350,7 +350,7 @@ export interface MemoryHistory<S extends State = State> extends History<S> {
   index: number;
 }
 
-const readOnly: <T extends unknown>(obj: T) => T = __DEV__
+const readOnly: <T extends unknown>(obj: T) => T = true
   ? obj => Object.freeze(obj)
   : obj => obj;
 
@@ -501,11 +501,16 @@ export function createBrowserHistory(
   }
 
   function allowTx(action: Action, location: Location, retry: () => void) {
+    // 使用了逗号操作符，如果blockers length不为0，返回false
     return (
       !blockers.length || (blockers.call({ action, location, retry }), false)
     );
   }
-
+  /**
+   * 调用回调入口函数
+   *
+   * @param {Action} nextAction
+   */
   function applyTx(nextAction: Action) {
     action = nextAction;
     [index, location] = getIndexAndLocation();
@@ -514,6 +519,17 @@ export function createBrowserHistory(
 
   function push(to: To, state?: State) {
     let nextAction = Action.Push;
+    /*
+      处理to，尤其to为字符串的情况，需要转为
+      export interfacr Loaction {
+        pathname: string;
+        search：string;
+        hash: stringj;
+        state: object | null;
+        key: string;
+      }
+      的形式
+    */
     let nextLocation = getNextLocation(to, state);
     function retry() {
       push(to, state);
